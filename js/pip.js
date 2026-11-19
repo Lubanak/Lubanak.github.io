@@ -142,6 +142,7 @@
   };
 
   Pip.talking = function (on) { holder.classList.toggle("is-talking", !!on); };
+  Pip.thinking = function (on) { holder.classList.toggle("is-thinking", !!on); };
 
   Pip.think = function (text, ms = 2800) {
     if (!thoughtEl) return;

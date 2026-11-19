@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build Pip's brain</title>
+  <style>
+    :root { --ink: #1d2340; --muted: #646c8c; --me: #5b57e0; }
+    body { font-family: system-ui, sans-serif; background: #eef0ff; color: var(--ink); margin: 0; padding: 32px 16px; }
+    main { max-width: 760px; margin: 0 auto; background: #fff; border-radius: 18px; padding: 24px; box-shadow: 0 8px 24px rgba(40,40,110,.08); }
+    h1 { font-size: 22px; margin: 0 0 6px; } p { color: var(--muted); line-height: 1.6; }
+    button { font: inherit; font-weight: 600; background: var(--me); color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+    pre { background: #f5f6ff; border-radius: 10px; padding: 12px; font-size: 12.5px; white-space: pre-wrap; max-height: 380px; overflow: auto; }
+    input { font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid #ccd; width: 100%; box-sizing: border-box; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🧠 Build Pip's brain</h1>
+  <p>Embeds every example in <code>brain/dataset.js</code> and saves <code>brain/index.json</code>. Run this after editing the dataset, through <code>python brain/build_server.py</code>.</p>
+  <button id="go">Build index</button>
+  <pre id="out">Ready.</pre>
+  <h1 style="margin-top:22px">🔎 Test a question</h1>
+  <input id="q" placeholder="e.g. is he any good with hardware?" />
+  <pre id="res"></pre>
+</main>
+<script src="../js/content.js"></script>
+<script src="dataset.js"></script>
+<script src="eval.js"></script>
+<script src="brain.js"></script>
+<script>
+  const out = document.getElementById("out"), res = document.getElementById("res");
+  const log = (s) => (out.textContent += "\n" + s);
+  out.textContent = `Dataset: ${PipBrain.stats.intents} intents, ${PipBrain.stats.examples} examples. Model: ${PipBrain.stats.model}`;
+  document.getElementById("go").onclick = async () => {
+    log("Loading model…");
+    const t0 = performance.now();
+    const idx = await PipBrain.buildIndex((p) => (document.getElementById("go").textContent = `Loading model ${p}%`));
+    document.getElementById("go").textContent = "Build index";
+    log(`Embedded ${idx.count} examples in ${((performance.now() - t0) / 1000).toFixed(1)} s (hash ${idx.hash}).`);
+    const r = await fetch("index.json", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(idx) });
+    log(r.ok ? "✅ " + (await r.text()) : `❌ Save failed (${r.status}). Are you running brain/build_server.py?`);
+    const t = await fetch("train.json", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(PipBrain.trainingData()) });
+    if (t.ok) log("✅ " + (await t.text()) + " (for finetune.py)");
+    log("\nRunning held-out eval…");
+    const ev = await PipBrain.evaluate(PIP_EVAL);
+    log(`EVAL: ${ev.pass}/${ev.total} = ${Math.round((ev.pass / ev.total) * 100)}%  (clarify-with-right-option counts as ½)`);
+    ev.rows.forEach((r) => log(`${r.good === true ? "✓" : r.good ? "~" : "✗"} ${r.score.toFixed(2)} ${r.got.padEnd(24)} | ${r.q}  [want ${r.want}]`));
+  };
+  document.getElementById("q").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    await PipBrain.load();
+    const top = await PipBrain.match(e.target.value);
+    res.textContent = top.map((t) => `${t.score.toFixed(3)}  ${t.intent.id.padEnd(16)} ← "${t.example}"`).join("\n");
+  });
+</script>
+</body>
+</html>

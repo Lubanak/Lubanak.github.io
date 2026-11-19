@@ -68,8 +68,11 @@
   function me(text) { row(`<div class="b">${esc(text)}</div>`, "me"); }
   function note(text) { const n = document.createElement("div"); n.className = "sysnote"; n.textContent = text; log.appendChild(n); scroll(); }
 
-  function chips(list) {
-    S.lastChips = list;
+  // transient = one-off buttons ("did you mean…", "Google it") that shouldn't become the
+  // set we restore after a typed question.
+  function chips(list, transient = false) {
+    S.chipsVer = (S.chipsVer || 0) + 1;
+    if (!transient) S.lastChips = list;
     chipsEl.innerHTML = "";
     list.forEach((c) => {
       const b = document.createElement("button");
@@ -276,6 +279,7 @@
       { id: "hydro", label: "⏱️ The 45→10 min speed-up", go: hydroDemo },
       { id: "fe", label: "🏎️ Formula Electric CAN bus", go: feStory },
       { id: "stm32", label: "🔌 STM32 Ethernet server", go: stm32Story },
+      { id: "brain", label: "🧠 How does Pip's brain work?", go: async () => { S.seen.add("brain"); await explainBrain(); engineerChips(); } },
     ];
     const left = all.filter((c) => !S.seen.has(c.id));
     const extra = left.length ? [] : [{ label: "Seen it all? Get the one-pager", go: async () => { await say("Completionist. Respect. 📄"); Overview.open(); engineerChips(); } }];
@@ -447,12 +451,138 @@
     "Great question. Terrible timing. Ask me about eggs, FPGAs, or MPI instead?",
     "My neural network just returned <code>undefined</code>. Try another question? 🫠",
   ];
-  async function answer(q) {
+  // Backup brain: keyword rules, used if the real brain can't load.
+  async function regexAnswer(q) {
     const t = q.toLowerCase();
     for (const [re, fn] of RULES) if (re.test(t)) { await fn(); return true; }
     Pip.think("*searches memory banks*", 1600);
     await say(pick(FALLBACK));
     return false;
+  }
+
+  /* ---------------- the real brain (brain/brain.js) ---------------- */
+  const Brain = window.PipBrain;
+  const DEBUG = new URLSearchParams(location.search).has("debug");
+  let brainPct = 0, brainNote = null;
+  const onBrainProgress = (p) => {
+    brainPct = p;
+    if (brainNote) brainNote.textContent = `🧠 Loading Pip's brain… ${p}% (23 MB, only the first time)`;
+  };
+  // Start downloading quietly as soon as someone shows interest in typing.
+  const preload = () => { if (Brain && !Brain.ready && !Brain.failed) Brain.load(onBrainProgress); };
+  input.addEventListener("focus", preload);
+  form.addEventListener("pointerenter", preload);
+
+  async function ensureBrain() {
+    if (Brain.ready) return true;
+    Pip.thinking(true);
+    Pip.think("*booting brain…* 🧠", 30000);
+    note(`🧠 Loading Pip's brain… ${brainPct}% (23 MB, only the first time)`);
+    brainNote = log.lastElementChild;
+    const ok = await Promise.race([Brain.load(onBrainProgress), sleep(45000).then(() => false)]);
+    Pip.thinking(false);
+    Pip.think(ok ? "*brain online* ✨" : "*brain.exe has stopped working*", 1800);
+    brainNote.textContent = ok ? "🧠 Brain online. It runs entirely on your device." : "🧠 Brain couldn't load here, so I'm using my backup answers.";
+    brainNote = null;
+    return ok && Brain.ready;
+  }
+
+  const intentLabel = (it) => it.label || (it.examples[0][0].toUpperCase() + it.examples[0].slice(1) + "?");
+
+  async function answer(q) {
+    if (!Brain || Brain.failed || !(await ensureBrain())) return regexAnswer(q);
+    Pip.thinking(true);
+    Pip.think(pick(["*thinking…*", "*consulting neural network…*", "*searching memory banks…*", "*crunching 384 numbers…*"]), 2400);
+    const t0 = performance.now();
+    const top = await Brain.match(q);
+    const d = Brain.decide(top);
+    await sleep(Math.max(0, 650 + Math.random() * 750 - (performance.now() - t0))); // a moment to "think"
+    Pip.thinking(false);
+    if (DEBUG) note("debug · " + top.map((t) => `${t.intent.id} ${t.score.toFixed(2)}`).join(" · "));
+
+    if (d.type === "answer") return runIntent(d.intent, q);
+    if (d.type === "clarify") {
+      const prev = S.lastChips;
+      await say(pick(["Hmm, I'm torn between two answers. Did you mean…", "Quick check, which one did you mean? 🤔"]));
+      const opts = d.options.map((o) => ({ label: intentLabel(o.intent), go: async () => { const v = S.chipsVer; await runIntent(o.intent, q); if (S.chipsVer === v) chips(prev); } }));
+      chips([...opts, { label: "Neither", ghost: true, go: async () => { await dontKnow(q); } }], true);
+      return;
+    }
+    return dontKnow(q);
+  }
+
+  async function dontKnow(q) {
+    Pip.think("*searches memory banks… nothing*", 1800);
+    Pip.trick("shake");
+    await say(pick([
+      "Hmm, Kanwar hasn't taught me that one. 🤔 I only answer what I actually know, so no making stuff up. Try his projects, skills, or availability?",
+      "That one's not in my memory banks. 🫠 I'm a Kanwar specialist. Want to try Google instead?",
+    ]));
+    googleChip(q);
+  }
+
+  function googleChip(q) {
+    const prev = S.lastChips;
+    chips([
+      { label: "🔍 Google it", go: async () => { window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank", "noopener"); await say("Opened Google in a new tab. Come back, though. I'll miss you. 🥺"); chips(prev); } },
+      ...prev.slice(0, 3),
+    ], true);
+  }
+
+  // Offer some chips but keep a couple of the visitor's current options too.
+  function chipsPlus(list) { const prev = S.lastChips; chips([...list, ...prev.filter((c) => !list.some((l) => l.label === c.label)).slice(0, 2)]); }
+
+  const projChip = { agbot: ["🥚 AgBot egg detection", agbotDemo], counter: ["📟 FPGA IR counter", counterDemo], mpi: ["🧩 MPI halo regions", mpiDemo], hydro: ["⏱️ Hydro speed-up", hydroDemo], fe: ["🏎️ Formula Electric", feStory], stm32: ["🔌 STM32 server", stm32Story] };
+  const projChips = (ids) => ids.map((id) => ({ label: projChip[id][0], go: projChip[id][1] }));
+
+  const ACTIONS = {
+    weather: () => say(`He's based in ${K.location}${S.temp !== null ? `, where it's currently <b>${S.temp}°C</b>${S.temp < -15 ? ". Yes, people live there. On purpose. 🥶" : "."}` : ". Famous for winters that build character. 🥶"}`),
+    skills: () => skills(),
+    agbot: () => agbotDemo(), hydro: () => hydroDemo(), fe: () => feStory(), counter: () => counterDemo(), mpi: () => mpiDemo(), stm32: () => stm32Story(),
+    agbotChip: () => chipsPlus(projChips(["agbot"])),
+    embeddedChips: () => chipsPlus(projChips(["counter", "stm32", "fe"])),
+    projectChips: () => chips(projChips(["agbot", "hydro", "counter", "mpi", "fe", "stm32"])),
+    best: () => bestWork(),
+    whyHire: () => whyHire(),
+    draws: () => draws(),
+    contact: () => contact(),
+    quotes: async () => { const c = quotesCard(); if (c) card(c); },
+    hire: async () => { await say(`He's open to <b>co-op and research roles</b>, especially AI, computer vision and embedded systems. He graduates ${K.gradDate}.`); card(statsCard()); },
+    linkedin: async () => { await say(`Here's his LinkedIn → ${link(K.links.linkedin, "linkedin.com/in/kanwar-n-s-lubana")}. Go say hi, he's genuinely nice. 💙`); card(linksCard()); },
+    github: () => say(`His GitHub is ${link(K.links.github, "github.com/Lubanak")}. It's just getting started. This website is literally the first repo on it. 👶`),
+    resume: async () => {
+      if (K.links.resume) { await say("Here you go! 📄"); card(statsCard()); return; }
+      await say("He hasn't posted his resume here yet, but the one-page summary has everything. 📄");
+      chipsPlus([{ label: "Open the one-pager", go: async () => Overview.open() }]);
+    },
+    pipBrain: () => explainBrain(),
+    wave: () => Pip.trick("wave"), wiggle: () => Pip.trick("wiggle"), shake: () => Pip.trick("shake"),
+    blush: () => { Pip.flash("p-blush", 2500); Pip.expression("happy", 2500); },
+    trick: () => Pip.trick(pick(["backflip", "dance", "juggle", "seg"])),
+    google: (q) => googleChip(q),
+  };
+
+  async function runIntent(intent, q) {
+    if (intent.say) { const s = pick(intent.say); await say(typeof s === "function" ? s(K) : s); }
+    const act = ACTIONS[intent.action];
+    if (act) await act(q);
+  }
+
+  async function explainBrain() {
+    Pip.think("*taps own head*");
+    await say("Am I an AI? Kind of! 🧠 Here's my secret:");
+    const st = Brain ? Brain.stats : { examples: 500, intents: 50 };
+    card(nodeFrom(`<div class="rc"><div class="bd">
+      <div class="k">How Pip's brain works</div>
+      <ol class="list" style="padding:8px 0 0 18px">
+        <li><b>Distillation:</b> a big AI model (the teacher) wrote ${st.examples} example questions across ${st.intents} topics, in my voice.</li>
+        <li><b>Student:</b> I'm a 23 MB language model (MiniLM, 8-bit) running <i>in your browser</i> with transformers.js.</li>
+        <li><b>Matching:</b> I turn your question into 384 numbers and find the closest examples (cosine similarity).</li>
+        <li><b>Honesty:</b> if nothing is close enough, I say I don't know. Facts come from Kanwar's profile, never from my memory.</li>
+      </ol>
+      <p style="margin-top:8px">Nothing you type leaves your device. Held-out eval accuracy: about 89%.</p>
+    </div></div>`));
+    await say(pick(["So yes, I'm a real neural network. A small one. Be gentle.", "Fun fact: I'm running on YOUR device right now. Hi, your CPU! 👋"]));
   }
 
   form.addEventListener("submit", (e) => {
@@ -464,9 +594,9 @@
     clearChips();
     run(async () => {
       me(q);
-      const before = S.lastChips;
+      const v = S.chipsVer;
       await answer(q);
-      if (S.lastChips === before && restore.length) chips(restore);
+      if (S.chipsVer === v && restore.length) chips(restore);
     });
   });
 

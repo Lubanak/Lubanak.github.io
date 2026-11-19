@@ -113,6 +113,17 @@ window.KANWAR = {
       tracks: ["parallel"],
     },
     {
+      id: "brain",
+      title: "Pip's brain: a distilled assistant in your browser",
+      org: "This website",
+      when: "2026",
+      tags: ["transformers.js", "MiniLM embeddings", "Distillation", "Eval set"],
+      blurb:
+        "A large model wrote ~500 example questions in Pip's voice; a 23 MB sentence-embedding model running in the visitor's browser matches new questions to them, with confidence thresholds and a held-out eval set. Facts are looked up, never memorized, so it can't make things up.",
+      photos: [],
+      tracks: ["ml"],
+    },
+    {
       id: "stm32",
       title: "STM32 Ethernet client–server",
       org: "ECE 3740 · U of Manitoba",

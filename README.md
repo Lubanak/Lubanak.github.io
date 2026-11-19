@@ -16,6 +16,7 @@ Everything is plain HTML, CSS and JavaScript, with no build step, so it runs on 
 | `js/demos.js` | Mini-demos: egg sorter, IR gate, stopwatch, MPI slider, spy dossier |
 | `js/overview.js` | The "See everything" one-page summary |
 | `img/` | Photos |
+| `brain/` | **Pip's brain:** a distilled dataset and a 23 MB language model that runs in the visitor's browser and answers typed questions. See [brain/README.md](brain/README.md) |
 
 ## Adding things later
 

@@ -110,6 +110,11 @@ button { font: inherit; cursor: pointer; }
 .is-talking .p-mouth, .is-talking .p-mouth-flat { animation: talk .28s infinite alternate; transform-box: fill-box; transform-origin: center; }
 @keyframes talk { to { transform: scaleY(1.9) scaleX(.85); } }
 
+/* thinking (brain working) */
+.is-thinking .p-bulb { animation: thinkbulb .3s ease-in-out infinite alternate; }
+.is-thinking .p-eyes { transform: translate(5px, -6px) !important; transition: transform .2s; }
+@keyframes thinkbulb { to { opacity: .15; } }
+
 /* sleeping */
 .is-asleep .pip-trick { animation: sleepbob 4s ease-in-out infinite; }
 .is-asleep .p-eyes-normal, .is-asleep .p-lids, .is-asleep .acc-shades, .is-asleep .p-eyes-happy { display: none !important; }

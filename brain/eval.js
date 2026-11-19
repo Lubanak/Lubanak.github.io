@@ -1,0 +1,48 @@
+/* =====================================================================
+   HELD-OUT EVAL SET. Questions the brain was NOT trained on.
+   Never copy these into dataset.js, or the accuracy number stops
+   meaning anything. "?" = should be "I don't know" (low confidence).
+   brain/build.html runs this after every build.
+   ===================================================================== */
+window.PIP_EVAL = [
+  ["is he any good with hardware?", "embedded"],
+  ["what's he majoring in", "studies"],
+  ["how smart is this kid academically", "gpa"],
+  ["can I get his email", "contact"],
+  ["has he ever trained a neural net", "ml"],
+  ["tell me about the egg robot thing", "agbot"],
+  ["does he speak french", "unknownPersonal"],
+  ["what's his favourite pizza topping", "unknownPersonal"],
+  ["whats ur deal", "pipWho"],
+  ["are you powered by gpt", "pipAI"],
+  ["is he open to summer co-op 2027", "hire"],
+  ["why would I pick him over others", "whyHire"],
+  ["what did he build at his internship", "hydro"],
+  ["experience with real time operating systems", "embedded"],
+  ["can he split work across cores", "parallel|mpi"],
+  ["what's 2+2", "?|offTopic"],
+  ["write a poem about cats", "?|offTopic"],
+  ["how tall is he", "private"],
+  ["does he like hiking", "unknownPersonal"],
+  ["what kind of teammate is he", "teamwork"],
+  ["any experience with race cars", "fe"],
+  ["show me something he made", "projects"],
+  ["has he worked with gpus", "gpu"],
+  ["where can I see his code", "github"],
+  ["he draws?", "hobbies"],
+  ["what's he looking for after graduation", "goals"],
+  ["how did you get so smart", "pipAI"],
+  ["asdfghjkl", "?"],
+  ["does he know rust", "languages"],
+  ["did he ever lead anything", "leadership"],
+  ["is he good at explaining stuff", "teaching"],
+  ["what tools does he use for maps", "gis"],
+  ["is he ready for a job", "hire"],
+  ["what's the most impressive thing he's done", "best"],
+  ["can you tell me a joke about computers", "joke"],
+  ["what's his phone", "private"],
+  ["how do I connect with him on linkedin", "linkedin"],
+  ["what happened at manitoba hydro", "hydro"],
+  ["is it freezing there", "location"],
+  ["are you conscious", "pipAI"],
+];
