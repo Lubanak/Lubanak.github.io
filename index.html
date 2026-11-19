@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Kanwar Lubana — talk to Pip</title>
+  <meta name="description" content="Kanwar Lubana, Computer Engineering at the University of Manitoba — AI, computer vision, embedded systems and parallel computing. Ask Pip, his (totally real) AI assistant." />
+  <meta property="og:title" content="Kanwar Lubana — talk to Pip" />
+  <meta property="og:description" content="Computer Engineering · AI, vision, embedded & parallel computing. Pip will show you around." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='8' y='14' width='84' height='72' rx='34' fill='%23eef0f8'/%3E%3Crect x='20' y='26' width='60' height='46' rx='22' fill='%2310121c'/%3E%3Crect x='34' y='38' width='9' height='14' rx='4.5' fill='%235ff3ff'/%3E%3Crect x='57' y='38' width='9' height='14' rx='4.5' fill='%235ff3ff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Shared gradients + small Pip avatar used in chat bubbles -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="g-shell" cx="38%" cy="28%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eef0f8"/><stop offset="1" stop-color="#c3c8e0"/></radialGradient>
+      <radialGradient id="g-visor" cx="40%" cy="25%" r="85%"><stop offset="0" stop-color="#2a2f45"/><stop offset="1" stop-color="#05060c"/></radialGradient>
+      <linearGradient id="g-pod" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fa8ff"/><stop offset="1" stop-color="#3b4fe0"/></linearGradient>
+      <radialGradient id="g-core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#e9fdff"/><stop offset=".45" stop-color="#22d3ee"/><stop offset="1" stop-color="#2563eb"/></radialGradient>
+      <filter id="g-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <symbol id="pip-avatar" viewBox="20 0 160 160">
+        <ellipse cx="34" cy="86" rx="12" ry="20" fill="url(#g-pod)"/><ellipse cx="166" cy="86" rx="12" ry="20" fill="url(#g-pod)"/>
+        <rect x="34" y="28" width="132" height="116" rx="56" fill="url(#g-shell)"/>
+        <rect x="50" y="46" width="100" height="78" rx="36" fill="url(#g-visor)"/>
+        <rect x="72" y="70" width="16" height="22" rx="8" fill="#5ff3ff"/><rect x="112" y="70" width="16" height="22" rx="8" fill="#5ff3ff"/>
+        <path d="M88 104 Q100 112 112 104" stroke="#5ff3ff" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <line x1="100" y1="28" x2="100" y2="12" stroke="#7fa8ff" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="10" r="7" fill="url(#g-core)"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="top">
+    <svg class="top-av" viewBox="20 0 160 160" aria-hidden="true"><use href="#pip-avatar"/></svg>
+    <div class="who">
+      <b>Kanwar Lubana</b>
+      <span><i class="dot"></i><span id="status-line">Computer Engineering · U of Manitoba · open to co-op</span></span>
+    </div>
+    <nav class="toplinks" aria-label="Quick links">
+      <a class="pill" id="lnk-linkedin" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="pill" id="lnk-github" target="_blank" rel="noopener">GitHub</a>
+      <a class="pill" id="lnk-resume" target="_blank" rel="noopener">Resume</a>
+      <button class="pill pri" id="skip" type="button"><span class="long">Skip the chat → see everything</span><span class="short">See everything</span></button>
+    </nav>
+  </header>
+
+  <main class="split">
+    <aside class="stage" id="stage" aria-label="Pip">
+      <div class="mood" id="mood">✨ Just woke up</div>
+      <div class="pip-area" id="pip-area">
+        <div class="thought" id="thought" aria-hidden="true"></div>
+        <div class="pip-holder" id="pip"></div>
+        <div class="floor"></div>
+      </div>
+      <div class="wx" id="wx" hidden></div>
+      <p class="stage-hint">psst — click me</p>
+    </aside>
+
+    <section class="chatcol" aria-label="Conversation with Pip">
+      <div class="log" id="log" role="log" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <input id="ask" type="text" maxlength="200" placeholder="Ask Pip anything… “what's his GPA?”, “does he know Python?”" aria-label="Ask Pip a question" />
+        <button type="submit" aria-label="Send">↑</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="overview" id="overview" hidden></div>
+
+  <script src="js/content.js"></script>
+  <script src="js/pip.js"></script>
+  <script src="js/demos.js"></script>
+  <script src="js/overview.js"></script>
+  <script src="js/chat.js"></script>
+</body>
+</html>
