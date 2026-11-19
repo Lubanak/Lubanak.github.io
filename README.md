@@ -4,6 +4,8 @@ A chat-first portfolio. Visitors meet **Pip**, a small robot that asks who they 
 
 Everything is plain HTML, CSS and JavaScript, with no build step, so it runs on GitHub Pages as-is.
 
+**How it's built:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the tech stack, layout, file structure, UML class, sequence and state diagrams, and the brain pipeline.
+
 ## Files
 
 | File | What it is |
